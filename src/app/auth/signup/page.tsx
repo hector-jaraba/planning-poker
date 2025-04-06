@@ -158,8 +158,8 @@ export default function SignupPage() {
             type="submit"
             className={`w-full rounded-md ${
               loading
-                ? "bg-blue-700/50 cursor-not-allowed"
-                : "bg-blue-700 hover:bg-blue-600"
+                ? "bg-primary-700 cursor-not-allowed"
+                : "bg-primary-700 hover:bg-primary-600"
             } py-2 text-white transition-colors`}
             disabled={loading}
           >

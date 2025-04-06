@@ -18,11 +18,13 @@ export default function SignInPage() {
 
   // Check if user just registered
   useEffect(() => {
-    if (searchParams.get("registered") === "true") {
-      setShowSuccess(true);
-    }
-    if (searchParams.get("error")) {
-      setError("Invalid credentials. Please try again.");
+    if (searchParams) {
+      if (searchParams.get("registered") === "true") {
+        setShowSuccess(true);
+      }
+      if (searchParams.get("error")) {
+        setError("Invalid credentials. Please try again.");
+      }
     }
   }, [searchParams]);
 
@@ -71,7 +73,7 @@ export default function SignInPage() {
         )}
 
         {showSuccess && (
-          <div className="mb-4 rounded-md bg-green-500/20 p-3 text-sm text-green-300">
+          <div className="mb-4 rounded-md bg-lime-500/20 p-3 text-sm text-green-300">
             Account created successfully! Please sign in.
           </div>
         )}
@@ -117,8 +119,8 @@ export default function SignInPage() {
             type="submit"
             className={`w-full rounded-md ${
               loading
-                ? "bg-blue-700/50 cursor-not-allowed"
-                : "bg-blue-700 hover:bg-blue-600"
+                ? "bg-primary-700 cursor-not-allowed"
+                : "bg-primary-700 hover:bg-primary-600"
             } py-2 text-white transition-colors`}
             disabled={loading}
           >

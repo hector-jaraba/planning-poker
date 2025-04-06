@@ -1,5 +1,23 @@
 {
+  "/_not-found": "app/_not-found.js",
+  "/api/auth/signup/route": "app/api/auth/signup/route.js",
+  "/api/jira/import/route": "app/api/jira/import/route.js",
+  "/api/sessions/[id]/tasks/[taskId]/route": "app/api/sessions/[id]/tasks/[taskId]/route.js",
+  "/api/sessions/join/route": "app/api/sessions/join/route.js",
+  "/api/auth/test/route": "app/api/auth/test/route.js",
+  "/auth/error/page": "app/auth/error/page.js",
+  "/auth/signin/page": "app/auth/signin/page.js",
+  "/auth/signup/page": "app/auth/signup/page.js",
+  "/page": "app/page.js",
+  "/api/sessions/route": "app/api/sessions/route.js",
+  "/sessions/join/page": "app/sessions/join/page.js",
+  "/sessions/create/page": "app/sessions/create/page.js",
+  "/api/sessions/[id]/route": "app/api/sessions/[id]/route.js",
+  "/sessions/[id]/page": "app/sessions/[id]/page.js",
+  "/api/sessions/[id]/admins/route": "app/api/sessions/[id]/admins/route.js",
+  "/api/test-db/route": "app/api/test-db/route.js",
   "/sessions/page": "app/sessions/page.js",
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/sessions/[id]/page": "app/sessions/[id]/page.js"
+  "/api/socket-redirect/route": "app/api/socket-redirect/route.js",
+  "/api/socket/route": "app/api/socket/route.js"
 }

@@ -43,6 +43,7 @@ try {
       default: "active",
     },
     shareLink: String,
+    admins: [mongoose.Types.ObjectId],
   });
 
   // Create the model
@@ -724,6 +725,17 @@ export default function handler(req, res) {
         task.status = "completed";
         task.revealed = true; // Make sure estimates are revealed with final estimate
 
+        // Check if all tasks are completed
+        const allTasksCompleted = session.tasks.every(
+          (t) => t.status === "completed"
+        );
+
+        // If all tasks are completed, mark the session as completed
+        if (allTasksCompleted) {
+          console.log("All tasks completed, marking session as completed");
+          session.status = "completed";
+        }
+
         // Save and broadcast update
         await session.save();
         console.log("Final estimate set for task:", task.title, "=", estimate);
@@ -792,6 +804,92 @@ export default function handler(req, res) {
           userId: userData.userId,
           username: userData.username,
         });
+      }
+    });
+
+    // Handle admin management
+    socket.on("make_admin", async (data) => {
+      try {
+        const { targetUserId } = data;
+        const session = await SessionModel.findById(sessionId);
+
+        if (!session) {
+          socket.emit("error", { message: "Session not found" });
+          return;
+        }
+
+        // Check if current user is the owner or an admin
+        const isOwner = session.ownerId.toString() === userId.toString();
+        const isAdmin = session.admins?.some(
+          (adminId) => adminId.toString() === userId.toString()
+        );
+
+        if (!isOwner && !isAdmin) {
+          socket.emit("error", {
+            message:
+              "Only the session owner or admins can manage admin permissions",
+          });
+          return;
+        }
+
+        // Initialize admins array if it doesn't exist
+        if (!session.admins) {
+          session.admins = [];
+        }
+
+        // Add target user as admin if not already an admin
+        if (
+          !session.admins.some(
+            (adminId) => adminId.toString() === targetUserId.toString()
+          )
+        ) {
+          session.admins.push(new mongoose.Types.ObjectId(targetUserId));
+          await session.save();
+
+          // Broadcast the updated session to all users in the room
+          io.to(sessionId).emit("session_update", session);
+        }
+      } catch (error) {
+        console.error("Failed to make user admin:", error);
+        socket.emit("error", { message: "Failed to make user admin" });
+      }
+    });
+
+    socket.on("remove_admin", async (data) => {
+      try {
+        const { targetUserId } = data;
+        const session = await SessionModel.findById(sessionId);
+
+        if (!session) {
+          socket.emit("error", { message: "Session not found" });
+          return;
+        }
+
+        // Check if current user is the owner or an admin
+        const isOwner = session.ownerId.toString() === userId.toString();
+        const isAdmin = session.admins?.some(
+          (adminId) => adminId.toString() === userId.toString()
+        );
+
+        if (!isOwner && !isAdmin) {
+          socket.emit("error", {
+            message:
+              "Only the session owner or admins can manage admin permissions",
+          });
+          return;
+        }
+
+        // Remove target user from admins array
+        session.admins = session.admins.filter(
+          (adminId) => adminId.toString() !== targetUserId.toString()
+        );
+        await session.save();
+
+        // Broadcast the updated session to all users in the room
+        io.to(sessionId).emit("session_update", session);
+      } catch (error) {
+        console.error("Failed to remove admin:", error);
+        socket.emit("error", { message: "Failed to remove admin" });
       }
     });
   });

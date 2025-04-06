@@ -9,6 +9,15 @@ import { v4 as uuidv4 } from "uuid";
 // Define User model
 let UserModel: mongoose.Model<any>;
 
+// Define session user type
+interface SessionUser {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
 try {
   // Try to get the model if it exists
   UserModel = mongoose.model("User");
@@ -59,17 +68,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user ID, handling both ObjectId and string formats
-    const userId = session.user.id;
+    const user = session.user as SessionUser;
+    const userId = user.id || user.email;
+    if (!userId) {
+      return NextResponse.json({ error: "User ID not found" }, { status: 401 });
+    }
     console.log(
       "Creating session for user:",
       userId,
       "with email:",
-      session.user.email
+      user.email
     );
 
     // Handle case for test user or missing ID
     let ownerId = userId;
-    if (!userId && session.user.email === "test@example.com") {
+    if (!userId && user.email === "test@example.com") {
       ownerId = "test-user-1";
       console.log("Using test-user-1 ID for test@example.com user");
     }
@@ -79,7 +92,7 @@ export async function POST(req: NextRequest) {
     console.log(`Creating session "${name}" with owner ${ownerId}`);
 
     // Promote user to admin role if they're not already an admin
-    if (userId && session.user.role !== "admin") {
+    if (userId && user.role !== "admin") {
       try {
         // Check if the user exists in the database
         const user = await UserModel.findById(userId);
@@ -136,7 +149,11 @@ export async function GET(request: NextRequest) {
     await connect();
 
     // Get user's sessions (both owned and participating)
-    const userId = session.user.id;
+    const user = session.user as SessionUser;
+    const userId = user.id || user.email;
+    if (!userId) {
+      return NextResponse.json({ error: "User ID not found" }, { status: 401 });
+    }
     console.log("Fetching sessions for user:", userId);
 
     // Special case for test users or if userId is undefined
@@ -149,7 +166,10 @@ export async function GET(request: NextRequest) {
 
     let query = {};
     try {
-      if (mongoose.isValidObjectId(userId)) {
+      if (!userId) {
+        console.log("No user ID provided, returning all sessions");
+        query = {};
+      } else if (mongoose.isValidObjectId(userId)) {
         // For valid MongoDB ObjectIds
         const userObjectId = new mongoose.Types.ObjectId(userId);
         query = {
@@ -170,11 +190,40 @@ export async function GET(request: NextRequest) {
     const sessions = await SessionModel.find(query).sort({ updatedAt: -1 });
     console.log(`Found ${sessions.length} sessions for user ${userId}`);
 
-    return NextResponse.json(sessions);
+    try {
+      // Transform the sessions to ensure dates are properly serialized
+      const serializedSessions = sessions.map((session) => {
+        const sessionObj = session.toObject();
+        return {
+          ...sessionObj,
+          _id: sessionObj._id.toString(),
+          createdAt:
+            sessionObj.createdAt?.toISOString() || new Date().toISOString(),
+          updatedAt:
+            sessionObj.updatedAt?.toISOString() || new Date().toISOString(),
+          status: sessionObj.status || "active",
+          tasks: sessionObj.tasks.map((task: any) => ({
+            ...task,
+            _id: task._id.toString(),
+            status: task.status || "pending",
+          })),
+        };
+      });
+
+      console.log("Successfully serialized sessions");
+      return NextResponse.json(serializedSessions);
+    } catch (serializeError) {
+      console.error("Error serializing sessions:", serializeError);
+      throw serializeError;
+    }
   } catch (error) {
     console.error("Failed to get sessions:", error);
     return NextResponse.json(
-      { message: "Failed to get sessions" },
+      {
+        message: "Failed to get sessions",
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

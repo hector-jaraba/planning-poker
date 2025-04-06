@@ -9,8 +9,12 @@ export default function AuthError() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const errorMessage = searchParams.get("error");
-    setError(errorMessage || "An authentication error occurred");
+    if (searchParams) {
+      const errorMessage = searchParams.get("error");
+      setError(errorMessage || "An authentication error occurred");
+    } else {
+      setError("An authentication error occurred");
+    }
   }, [searchParams]);
 
   return (

@@ -52,9 +52,9 @@ export default function TaskList({
             key={taskId}
             className={`cursor-pointer rounded-md p-3 ${
               taskId === activeTaskId
-                ? "bg-blue-900 text-white"
+                ? "bg-primary-900 text-white"
                 : task.status === "completed"
-                ? "bg-green-900/30 text-gray-200"
+                ? "bg-lime-900/30 text-gray-200"
                 : "bg-gray-700 text-gray-200 hover:bg-gray-600"
             }`}
             data-taskid={taskId}
@@ -72,7 +72,7 @@ export default function TaskList({
             <div className="flex items-center justify-between">
               <span className="font-medium">{task.title}</span>
               {task.finalEstimate && (
-                <span className="rounded-full bg-green-800 px-2 py-1 text-xs">
+                <span className="rounded-full bg-lime-800 px-2 py-1 text-xs">
                   {task.finalEstimate}
                 </span>
               )}
@@ -81,9 +81,9 @@ export default function TaskList({
               <span
                 className={`rounded px-1.5 py-0.5 ${
                   task.status === "active"
-                    ? "bg-blue-700"
+                    ? "bg-primary-700"
                     : task.status === "completed"
-                    ? "bg-green-700"
+                    ? "bg-lime-700"
                     : "bg-gray-600"
                 }`}
               >

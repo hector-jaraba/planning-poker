@@ -171,7 +171,7 @@ export default function AddTask({ sessionId, socket }: AddTaskProps) {
             setTaskStatus("idle");
             setErrorMessage("");
           }}
-          className="w-full rounded-md bg-blue-800 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+          className="w-full rounded-md bg-primary-800 px-3 py-2 text-center text-sm font-medium text-white hover:bg-primary-700"
         >
           Add New Task
         </button>
@@ -249,7 +249,7 @@ export default function AddTask({ sessionId, socket }: AddTaskProps) {
           className={`flex-1 rounded-md ${
             isSubmitting
               ? "bg-gray-600 cursor-not-allowed"
-              : "bg-blue-700 hover:bg-blue-600"
+              : "bg-primary-700 hover:bg-primary-600"
           } py-2 text-sm font-medium text-white`}
           disabled={isSubmitting}
         >

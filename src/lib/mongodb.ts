@@ -27,7 +27,10 @@ if (process.env.NODE_ENV === "development") {
     client = new MongoClient(uri, options);
     globalWithMongo._mongoClientPromise = client.connect();
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
+  // Ensure clientPromise is always defined
+  clientPromise =
+    globalWithMongo._mongoClientPromise ||
+    new MongoClient(uri, options).connect();
 } else {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);

@@ -2,9 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .btn {
+    @apply rounded-md px-4 py-2 text-sm font-medium text-white transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-primary-700 hover:bg-primary-600;
+  }
+
+  .btn-primary.loading {
+    @apply opacity-70 cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600;
+  }
+
+  .btn-secondary.loading {
+    @apply opacity-70 cursor-not-allowed;
+  }
+
+  .btn-info {
+    @apply bg-blue-700 hover:bg-blue-600;
+  }
+
+  .badge {
+    @apply rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary-700 text-white;
+  }
+
+  .badge-secondary {
+    @apply bg-gray-700 text-white;
+  }
+
+  .badge-info {
+    @apply bg-blue-700 text-white;
+  }
+
+  .input {
+    @apply w-full rounded-md bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  }
+
+  .input-bordered {
+    @apply border border-gray-600;
+  }
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress 0.5s ease-in-out forwards;
+  box-shadow: 0 0 15px rgba(155, 96, 255, 0.8);
+  animation-fill-mode: forwards;
+  animation-iteration-count: 1;
+}
+
 html,
 body {
-  height: 100%;
   background-color: #111827; /* bg-gray-900 */
 }
 

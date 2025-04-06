@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -16,8 +17,12 @@ export default function Navbar() {
     <nav className="bg-gray-800 px-4 py-4 shadow-md">
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center text-xl font-semibold">
-          <span className="mr-2">🃏</span>
-          <span>Planning Poker</span>
+          <Image
+            src="/planx.svg"
+            alt="Planning Poker App"
+            width={100}
+            height={50}
+          />
         </Link>
 
         {/* Mobile Menu Button */}
@@ -69,7 +74,7 @@ export default function Navbar() {
                 {session?.user?.name || session?.user?.email}
               </span>
               <button
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: "/" })}
                 className="rounded-md bg-red-700 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
               >
                 Sign Out
@@ -85,7 +90,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={() => signIn()}
-                className="rounded-md bg-blue-700 px-3 py-1 text-sm font-medium text-white hover:bg-blue-600"
+                className="rounded-md bg-primary-700 px-3 py-1 text-sm font-medium text-white hover:bg-primary-600"
               >
                 Sign In
               </button>
@@ -126,7 +131,7 @@ export default function Navbar() {
                 </span>
                 <button
                   onClick={() => {
-                    signOut();
+                    signOut({ callbackUrl: "/" });
                     setIsMenuOpen(false);
                   }}
                   className="rounded-md bg-red-700 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
@@ -148,7 +153,7 @@ export default function Navbar() {
                     signIn();
                     setIsMenuOpen(false);
                   }}
-                  className="rounded-md bg-blue-700 px-3 py-1 text-sm font-medium text-white hover:bg-blue-600"
+                  className="rounded-md bg-primary-700 px-3 py-1 text-sm font-medium text-white hover:bg-primary-600"
                 >
                   Sign In
                 </button>

@@ -5,6 +5,7 @@ export interface ISession {
   name: string;
   ownerId: Types.ObjectId;
   participants: Types.ObjectId[];
+  admins: Types.ObjectId[];
   tasks: ITask[];
   estimationType: "fibonacci" | "tshirt";
   status: "active" | "completed";
@@ -25,6 +26,12 @@ const SessionSchema = new Schema<ISession>(
       required: true,
     },
     participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    admins: [
       {
         type: Schema.Types.ObjectId,
         ref: "User",

@@ -106,7 +106,7 @@ export default function RevealEstimates({
   // Don't show button if task is completed
   if (isCompleted) {
     return (
-      <div className="mt-4 p-2 text-sm text-center rounded-md bg-green-900 text-white">
+      <div className="mt-4 p-2 text-sm text-center rounded-md bg-lime-900 text-white">
         Task completed with final estimate
       </div>
     );
@@ -121,7 +121,7 @@ export default function RevealEstimates({
           ? "bg-gray-600 cursor-not-allowed"
           : isRevealed
           ? "bg-red-700 hover:bg-red-600"
-          : "bg-green-700 hover:bg-green-600"
+          : "bg-lime-700 hover:bg-lime-500"
       }`}
     >
       {isLoading

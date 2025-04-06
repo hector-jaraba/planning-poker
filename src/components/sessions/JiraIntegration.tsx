@@ -89,7 +89,7 @@ export default function JiraIntegration({
 
         <button
           type="submit"
-          className={`w-full rounded-md bg-blue-700 py-2 text-sm font-medium text-white hover:bg-blue-600 ${
+          className={`w-full rounded-md bg-primary-700 py-2 text-sm font-medium text-white hover:bg-primary-600 ${
             isImporting ? "opacity-70" : ""
           }`}
           disabled={isImporting}

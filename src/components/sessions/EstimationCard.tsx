@@ -15,7 +15,7 @@ export default function EstimationCard({
     <button
       className={`flex h-16 w-12 items-center justify-center rounded-md text-xl font-bold transition-colors duration-200 sm:h-20 sm:w-16 ${
         selected
-          ? "bg-blue-600 text-white"
+          ? "bg-primary-600 text-white"
           : "bg-gray-700 text-gray-200 hover:bg-gray-600"
       }`}
       onClick={(e) => {

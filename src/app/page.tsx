@@ -19,16 +19,15 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col">
       <div className="hero min-h-screen bg-gray-900">
         <div className="hero-content flex-col lg:flex-row-reverse">
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2 p-8 flex justify-center items-center">
             <Image
-              src="/planning-poker.png"
+              src="/planx.svg"
               alt="Planning Poker App"
-              width={600}
-              height={400}
-              className="rounded-lg shadow-2xl"
+              width={500}
+              height={350}
             />
           </div>
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2 p-8">
             <h1 className="text-5xl font-bold text-white">
               Planning Poker for Agile Teams
             </h1>

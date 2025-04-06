@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import PageTransition from "@/components/ui/PageTransition";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,11 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" data-theme="mytheme" className="dark">
       <body
         className={`${inter.className} min-h-screen bg-gray-900 text-white`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <PageTransition>{children}</PageTransition>
+        </AuthProvider>
       </body>
     </html>
   );

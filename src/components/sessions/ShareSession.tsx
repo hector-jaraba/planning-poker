@@ -37,7 +37,7 @@ export default function ShareSession({
         />
         <button
           onClick={copyToClipboard}
-          className="ml-2 rounded-md bg-blue-800 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+          className="ml-2 rounded-md bg-primary-800 px-3 py-1 text-sm font-medium text-white hover:bg-primary-700"
         >
           {copied ? "Copied!" : "Copy"}
         </button>

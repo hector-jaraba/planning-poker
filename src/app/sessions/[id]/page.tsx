@@ -15,6 +15,7 @@ import useWindowSize from "@/hooks/useWindowSize";
 import { Session } from "next-auth";
 import ParticipantsList from "@/components/sessions/ParticipantsList";
 import RevealEstimates from "@/components/sessions/RevealEstimates";
+import Loading from "@/components/ui/Loading";
 
 // Define types
 interface Task {
@@ -34,15 +35,29 @@ interface Task {
   finalEstimate?: string | number;
 }
 
+interface SessionUser {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
+interface Participant {
+  userId: string;
+  name: string;
+}
+
 interface SessionData {
   _id: string;
   name: string;
   ownerId: string;
-  participants: string[];
+  participants: Participant[];
   tasks: Task[];
   estimationType: "fibonacci" | "tshirt";
   status: "active" | "completed";
   shareLink: string;
+  admins: string[];
 }
 
 // Add type definition for session user with id
@@ -74,6 +89,7 @@ export default function SessionPage() {
   const [socket, setSocket] = useState<any>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [participants, setParticipants] = useState<Map<string, any>>(new Map());
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Fibonacci sequence for estimation
   const fibonacciValues = [
@@ -92,16 +108,6 @@ export default function SessionPage() {
 
   // T-shirt sizes for estimation
   const tshirtValues = ["?", "XS", "S", "M", "L", "XL", "XXL", "∞"];
-
-  // Determine if user is admin
-  const isAdmin =
-    // Check for test user (email is test@example.com)
-    session?.user?.email === "test@example.com" ||
-    // Regular check - handle string IDs and MongoDB ObjectIds
-    (sessionData?.ownerId &&
-      session?.user?.id &&
-      (sessionData.ownerId === session.user.id ||
-        sessionData.ownerId.toString() === session.user.id.toString()));
 
   // Helper function to get task ID
   const getTaskId = (task: Task | null): string | undefined => {
@@ -231,6 +237,7 @@ export default function SessionPage() {
               title: t.title,
               status: t.status,
               estimates: t.estimates?.length || 0,
+              revealed: t.revealed,
             })),
             estimateCount:
               updatedSession.tasks.find((t) => t.status === "active")?.estimates
@@ -256,6 +263,17 @@ export default function SessionPage() {
                 console.log(
                   `Task status transition: "${updatedTask.title}" ${existingTask.status} -> ${updatedTask.status}`
                 );
+
+                // Check for incorrect state transition from pending to completed without being active
+                if (
+                  existingTask.status === "pending" &&
+                  updatedTask.status === "completed"
+                ) {
+                  console.warn(
+                    `Preventing incorrect transition from pending to completed for task: ${updatedTask.title}`
+                  );
+                  updatedTask.status = "pending";
+                }
               }
             });
 
@@ -277,6 +295,46 @@ export default function SessionPage() {
                     `Preserving revealed=true for task ${existingTaskId}`
                   );
                   matchingTask.revealed = true;
+
+                  // Also preserve the full estimate values for revealed tasks
+                  if (
+                    existingTask.estimates &&
+                    existingTask.estimates.length > 0
+                  ) {
+                    console.log(
+                      `Preserving ${existingTask.estimates.length} estimates for task ${existingTaskId}`
+                    );
+
+                    // Create a map of existing estimates by userId for quick lookup
+                    const existingEstimatesMap = new Map();
+                    existingTask.estimates.forEach((est) => {
+                      const userId = est.userId?.toString();
+                      if (userId) {
+                        existingEstimatesMap.set(userId, est);
+                      }
+                    });
+
+                    // Update the matching task's estimates with the full values from existing task
+                    matchingTask.estimates = matchingTask.estimates.map(
+                      (est) => {
+                        const userId = est.userId?.toString();
+                        const existingEst = existingEstimatesMap.get(userId);
+
+                        if (
+                          existingEst &&
+                          existingEst.value !== undefined &&
+                          existingEst.value !== null
+                        ) {
+                          return {
+                            ...est,
+                            value: existingEst.value,
+                            hasEstimate: true,
+                          };
+                        }
+                        return est;
+                      }
+                    );
+                  }
                 }
               }
             });
@@ -480,6 +538,52 @@ export default function SessionPage() {
               task.finalEstimate = data.finalEstimate;
               task.revealed = true;
 
+              console.log("Updated session data:", updatedSessionData);
+
+              // Check if all tasks are completed
+              const allTasksCompleted = updatedSessionData.tasks.every(
+                (t) => t.status === "completed"
+              );
+
+              // If all tasks are completed, mark the session as completed
+              if (allTasksCompleted) {
+                console.log(
+                  "All tasks completed, marking session as completed"
+                );
+                updatedSessionData.status = "completed";
+              } else {
+                // Find the next pending task to set as active
+                const nextPendingTask = updatedSessionData.tasks.find(
+                  (t) => t.status === "pending"
+                );
+
+                if (nextPendingTask) {
+                  console.log(
+                    `Setting next task as active: ${nextPendingTask.title}`
+                  );
+                  nextPendingTask.status = "active";
+
+                  // If we have a socket connection, emit the set_active_task event
+                  if (socketIO && isAdmin) {
+                    const nextTaskId =
+                      nextPendingTask.id || nextPendingTask._id?.toString();
+                    if (nextTaskId) {
+                      console.log(
+                        `Emitting set_active_task for next task: ${nextTaskId}`
+                      );
+
+                      // Use setTimeout to ensure the task_completed event is processed first
+                      setTimeout(() => {
+                        socketIO.emit("set_active_task", {
+                          taskId: nextTaskId,
+                        });
+                      }, 100);
+                    }
+                  }
+                }
+              }
+
+              // Update the session data first
               setSessionData(updatedSessionData);
 
               // If this is the active task, update it
@@ -513,6 +617,11 @@ export default function SessionPage() {
           setParticipants(participantsMap);
         });
 
+        socketIO.on("error", (error) => {
+          console.error("Socket error:", error);
+          // You might want to show this error to the user in the UI
+        });
+
         setSocket(socketIO);
 
         return () => {
@@ -528,6 +637,7 @@ export default function SessionPage() {
           socketIO.off("task_completed");
           socketIO.off("disconnect");
           socketIO.off("participants_update");
+          socketIO.off("error");
           socketIO.disconnect();
         };
       } catch (err) {
@@ -535,6 +645,32 @@ export default function SessionPage() {
       }
     }
   }, [sessionData?._id, session]);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!params?.id) return;
+
+      try {
+        const response = await fetch(`/api/sessions/${params.id}/admins`);
+        const data = await response.json();
+
+        if (data.admins) {
+          const user = session?.user as SessionUser;
+          const userId = user?.id || user?.email;
+          setIsAdmin(
+            data.ownerId === userId ||
+              data.admins.some((adminId: string) => adminId === userId)
+          );
+        }
+      } catch (error) {
+        console.error("Failed to check admin status:", error);
+      }
+    };
+
+    if (session?.user) {
+      checkAdminStatus();
+    }
+  }, [session, params?.id]);
 
   // Function to submit an estimate
   const submitEstimate = (value: string | number) => {
@@ -643,7 +779,11 @@ export default function SessionPage() {
   const emitSetActiveTask = (taskId: string) => {
     console.log("Emitting set_active_task event");
     try {
-      const payload = { taskId };
+      const payload = {
+        taskId,
+        // Add flag to preserve previous task status
+        preservePreviousStatus: true,
+      };
       console.log("Emitting with payload:", payload);
       socket.emit("set_active_task", payload);
 
@@ -703,12 +843,26 @@ export default function SessionPage() {
     }
   }, [activeTask]);
 
+  const handleMakeAdmin = async (userId: string) => {
+    if (!socket || !params?.id) return;
+
+    socket.emit("make_admin", {
+      sessionId: params.id,
+      userId,
+    });
+  };
+
+  const handleRemoveAdmin = async (userId: string) => {
+    if (!socket || !params?.id) return;
+
+    socket.emit("remove_admin", {
+      sessionId: params.id,
+      userId,
+    });
+  };
+
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="loader">Loading...</div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   if (error) {
@@ -745,6 +899,8 @@ export default function SessionPage() {
                 <ParticipantsList
                   socket={socket}
                   activeTaskId={getTaskId(activeTask) || null}
+                  sessionData={sessionData}
+                  isAdmin={isAdmin}
                 />
 
                 {/* Task List & Management */}
@@ -789,7 +945,7 @@ export default function SessionPage() {
                         </p>
                       )}
                       {activeTask.jiraId && (
-                        <div className="mt-2 rounded-md bg-blue-900 p-2 text-sm">
+                        <div className="mt-2 rounded-md bg-primary-900 p-2 text-sm">
                           <span className="font-semibold">JIRA ID:</span>{" "}
                           {activeTask.jiraId}
                         </div>
@@ -820,7 +976,7 @@ export default function SessionPage() {
                         Team Estimates
                       </h4>
                       {activeTask.finalEstimate && (
-                        <div className="mb-4 p-3 rounded-md bg-green-800 text-white">
+                        <div className="mb-4 p-3 rounded-md bg-lime-800 text-white">
                           <div className="flex items-center justify-between">
                             <div>
                               <span className="font-semibold">
@@ -828,7 +984,7 @@ export default function SessionPage() {
                               </span>{" "}
                               {activeTask.finalEstimate}
                             </div>
-                            <div className="text-sm bg-green-700 rounded-md px-2 py-1">
+                            <div className="text-sm bg-lime-700 rounded-md px-2 py-1">
                               Completed
                             </div>
                           </div>
@@ -842,10 +998,10 @@ export default function SessionPage() {
                                 key={estimate.userId}
                                 className={`rounded-md p-3 text-center transition-colors ${
                                   activeTask.revealed
-                                    ? "bg-green-700" // Green when estimates are revealed
+                                    ? "bg-lime-700" // Green when estimates are revealed
                                     : estimate.hasEstimate ||
                                       estimate.value !== undefined
-                                    ? "bg-blue-700" // Blue when user has estimated but not revealed
+                                    ? "bg-primary-700" // Blue when user has estimated but not revealed
                                     : "bg-gray-700" // Gray when no estimate
                                 }`}
                               >
@@ -868,7 +1024,7 @@ export default function SessionPage() {
                               </div>
                             ))}
                             {activeTask.aiEstimate && (
-                              <div className="rounded-md bg-purple-900 p-3 text-center">
+                              <div className="rounded-md bg-primary-900 p-3 text-center">
                                 <div className="font-medium text-white">
                                   AI Suggestion
                                 </div>
@@ -924,7 +1080,7 @@ export default function SessionPage() {
                                   }
                                   className={`rounded-md px-3 py-1 text-sm ${
                                     activeTask.finalEstimate === value
-                                      ? "bg-green-700 text-white"
+                                      ? "bg-lime-700 text-white"
                                       : "bg-gray-700 text-gray-200 hover:bg-gray-600"
                                   }`}
                                 >

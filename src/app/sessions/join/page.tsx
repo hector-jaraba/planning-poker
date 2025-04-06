@@ -146,7 +146,7 @@ export default function JoinSession() {
                 className="input input-bordered w-full"
                 value={sessionLink}
                 onChange={(e) => setSessionLink(e.target.value)}
-                placeholder="Paste session link or enter session code"
+                placeholder="Enter session code"
                 required
                 disabled={isJoining}
               />
